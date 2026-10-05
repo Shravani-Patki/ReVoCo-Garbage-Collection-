@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import axios from '../api';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard, Bell, Users, CheckCircle, ShieldAlert, Building,
@@ -38,7 +38,6 @@ const helperSequenceIcon = new L.Icon({
     iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
 });
 
-const BASE = 'http://127.0.0.1:5000';
 
 const fadeIn = {
     initial: { opacity: 0, x: 20 },
@@ -111,38 +110,48 @@ const MunicipalityDashboard = () => {
     const [routeSequence, setRouteSequence] = useState(null);
     const [routingHelper, setRoutingHelper] = useState('');
 
+    const fetchIssues = async () => {
+        try {
+            const res = await axios.get(`/api/waste/issues?city=${user.city}&status=all`);
+            setIssues(res.data);
+        } catch {
+            toast.error(t("Failed to sync issues."));
+        }
+    };
+
+    const fetchSocietyRequests = async () => {
+        try {
+            const res = await axios.get(`/api/waste/requests?city=${user.city}&status=all`);
+            setSocietyRequests(res.data);
+        } catch {
+            // no-op: failure is non-blocking for this polling refresh
+        }
+    };
+
+    const fetchHelpers = async () => {
+        try {
+            const res = await axios.get(`/api/auth/users?role=community_helper`);
+            setHelpers(res.data);
+        } catch {
+            // no-op: helper list refresh is best-effort
+        }
+    };
+
     useEffect(() => {
-        const fetchAll = () => { fetchIssues(); fetchSocietyRequests(); fetchHelpers(); };
+        const fetchAll = () => {
+            fetchIssues();
+            fetchSocietyRequests();
+            fetchHelpers();
+        };
         fetchAll();
         const id = setInterval(fetchAll, 10000);
         return () => clearInterval(id);
     }, []);
 
-    const fetchIssues = async () => {
-        try {
-            const res = await axios.get(`${BASE}/api/waste/issues?city=${user.city}&status=all`);
-            setIssues(res.data);
-        } catch { toast.error(t("Failed to sync issues.")); }
-    };
-
-    const fetchSocietyRequests = async () => {
-        try {
-            const res = await axios.get(`${BASE}/api/waste/requests?city=${user.city}&status=all`);
-            setSocietyRequests(res.data);
-        } catch { }
-    };
-
-    const fetchHelpers = async () => {
-        try {
-            const res = await axios.get(`${BASE}/api/auth/users?role=community_helper`);
-            setHelpers(res.data);
-        } catch { }
-    };
-
     // ── Citizen Issue Actions ─────────────────────────────────────────────────
     const markIssueSeen = async (id) => {
         try {
-            await axios.post(`${BASE}/api/waste/${id}/verify`, { status: 'seen' });
+            await axios.post(`/api/waste/${id}/verify`, { status: 'seen' });
             toast.success(t("Issue acknowledged.")); fetchIssues();
         } catch { toast.error(t("Failed.")); }
     };
@@ -151,7 +160,7 @@ const MunicipalityDashboard = () => {
         const h = selectedHelper[id];
         if (!h) return toast.warning(t("Select a helper first."));
         try {
-            await axios.post(`${BASE}/api/waste/${id}/verify`, { status: 'assigned', helper_id: h });
+            await axios.post(`/api/waste/${id}/verify`, { status: 'assigned', helper_id: h });
             toast.success(t("Helper dispatched!")); fetchIssues();
         } catch { toast.error(t("Dispatch failed.")); }
     };
@@ -160,7 +169,7 @@ const MunicipalityDashboard = () => {
         if (!routingHelper) return toast.warning(t("Select a helper to map routing sequence."));
         const toastId = toast.loading(t("Calculating optimal shortest-path collection sequence (Dijkstra algorithm)..."));
         try {
-            const res = await axios.get(`${BASE}/api/routing/helper/${routingHelper}`);
+            const res = await axios.get(`/api/routing/helper/${routingHelper}`);
             setRouteSequence(res.data);
             toast.update(toastId, { render: `Sequence calculated. Total Flight Path: ${res.data.total_distance_km} km`, type: 'success', isLoading: false, autoClose: 5000 });
         } catch {

@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../api';
 import { AlertCircle, Recycle } from 'lucide-react';
 import { formatDate, formatNumber, t } from '../i18n';
 
-const BASE = 'http://127.0.0.1:5000';
 
 const LotTrackingPage = () => {
     const { token } = useParams();
@@ -13,7 +12,7 @@ const LotTrackingPage = () => {
 
     useEffect(() => {
         let active = true;
-        axios.get(`${BASE}/api/market/track/${encodeURIComponent(token)}`)
+        axios.get(`/api/market/track/${encodeURIComponent(token)}`)
             .then(response => { if (active) setTracking(response.data); })
             .catch(() => { if (active) setError(t('This lot tracking link is invalid.')); });
         return () => { active = false; };

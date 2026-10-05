@@ -1,6 +1,8 @@
 # ReVoCo Frontend
 
-Run `npm install` followed by `npm run dev` to start the frontend. The Flask API must be running from `backend/` for login, marketplace, and runtime translation services.
+Run `npm install`, copy `.env.example` to `.env`, and run `npm run dev` to start the frontend. `VITE_API_URL` selects the Flask API origin; when unset, Vite proxies `/api` to `http://localhost:5000` during development.
+
+For Vercel, set the project root to `frontend` and configure `VITE_API_URL` to the Render service origin without an `/api` suffix. `vercel.json` rewrites client-side routes to `index.html`.
 
 ## Languages
 

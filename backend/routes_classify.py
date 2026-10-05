@@ -87,7 +87,9 @@ DISPOSAL_TIPS = {
 # ── Model loading ──────────────────────────────────────────────────────────────
 
 _model = None
-_device = torch.device("cpu")
+_model_error = None
+_model_initialized = False
+_device = torch.device('cpu')
 
 
 class ClassifierModelUnavailable(RuntimeError):
@@ -99,10 +101,10 @@ def _load_model():
     if _model is not None:
         return _model
 
-    model_path = os.environ.get('WASTE_CLASSIFIER_WEIGHTS')
-    if not model_path:
-        workspace_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        model_path = os.path.join(workspace_root, 'garbage_model')
+    classifier_dir = os.path.dirname(os.path.abspath(__file__))
+    model_path = os.environ.get('WASTE_CLASSIFIER_WEIGHTS') or os.path.join(classifier_dir, '..', 'garbage_model')
+    if not os.path.isabs(model_path):
+        model_path = os.path.join(classifier_dir, model_path)
     model_path = os.path.abspath(model_path)
     if not os.path.exists(model_path):
         raise ClassifierModelUnavailable(
@@ -126,9 +128,9 @@ def _load_model():
                         relative_path = os.path.relpath(full_path, model_path)
                         checkpoint.write(full_path, os.path.join(archive_root, relative_path).replace(os.sep, '/'))
             archive.seek(0)
-            state = torch.load(archive, map_location=_device, weights_only=False)
+            state = torch.load(archive, map_location='cpu', weights_only=False)
         else:
-            state = torch.load(model_path, map_location=_device, weights_only=False)
+            state = torch.load(model_path, map_location='cpu', weights_only=False)
         if isinstance(state, dict) and 'classifier.1.weight' in state:
             net.load_state_dict(state, strict=True)
         elif isinstance(state, dict) and 'model_state_dict' in state:
@@ -142,6 +144,17 @@ def _load_model():
     net.to(_device)
     _model = net
     return _model
+
+
+def initialize_classifier():
+    global _model_error, _model_initialized
+    if _model_initialized:
+        return
+    _model_initialized = True
+    try:
+        _load_model()
+    except Exception as error:
+        _model_error = error if isinstance(error, ClassifierModelUnavailable) else ClassifierModelUnavailable(str(error))
 
 
 # Standard ImageNet normalisation used for ResNet training
@@ -176,11 +189,12 @@ def classify_waste():
         return jsonify({"error": f"Invalid image: {e}"}), 400
 
     try:
-        model = _load_model()
+        if _model is None:
+            raise _model_error or ClassifierModelUnavailable('The waste classifier is not initialized.')
         tensor = _transform(img).unsqueeze(0).to(_device)
 
         with torch.no_grad():
-            logits = model(tensor)
+            logits = _model(tensor)
             probs = torch.softmax(logits, dim=1)[0]
 
         confidence, idx = probs.max(0)

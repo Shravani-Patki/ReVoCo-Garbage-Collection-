@@ -3,6 +3,14 @@
 .env.*
 !.env.example
 
+# Deployment-independent generated data and dependencies
+*.db
+node_modules/
+dist/
+__pycache__/
+.venv/
+venv/
+
 # Python environments, caches, and logs
 venv/
 .venv/

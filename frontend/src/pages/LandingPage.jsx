@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Leaf, ShieldCheck, Recycle, Heart, CheckCircle2, Navigation, Send, MapPin, Camera, Users, Coins } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import axios from '../api';
 import { MapContainer, TileLayer, CircleMarker, Tooltip } from 'react-leaflet';
 import { formatNumber, t } from "../i18n";
 
@@ -11,16 +12,14 @@ const LandingPage = () => {
     const [publicIssues, setPublicIssues] = useState([]);
 
     useEffect(() => {
-        const BASE = 'http://127.0.0.1:5000/api';
-
         // Fetch stats
-        fetch(`${BASE}/gamification/stats`).then(r => r.json()).then(s => {
+        axios.get('/api/gamification/stats').then(response => response.data).then(s => {
             setStats(s);
             setLoading(false);
         }).catch(() => setLoading(false));
 
         // Fetch public issues for the map
-        fetch(`${BASE}/waste/issues?status=all`).then(r => r.json()).then(issues => {
+        axios.get('/api/waste/issues?status=all').then(response => response.data).then(issues => {
             setPublicIssues(issues || []);
         }).catch(() => { });
     }, []);
@@ -49,15 +48,15 @@ const LandingPage = () => {
             {/* ─── HERO SECTION ─── */}
             <section style={{ maxWidth: 1200, margin: '0 auto', padding: '60px 48px 120px', display: 'flex', alignItems: 'center', gap: 60 }}>
                 <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }} style={{ flex: 1.2 }}>
-                    <h1 style={{ fontSize: 'clamp(3.5rem, 5vw, 4.5rem)', lineHeight: 1.1, color: 'var(--color-text-dark)', marginBottom: 24, letterSpacing: '-1.5px', fontWeight: 900 }}>{t("Reward. Verify.")}<br />{t("Collect. Make Your")}<br />{t("City Cleaner!")}</h1>
+                    <h1 style={{ fontSize: 'clamp(3.5rem, 5vw, 4.5rem)', lineHeight: 1.1, color: 'var(--color-text-dark)', marginBottom: 24, letterSpacing: '-1.5px', fontWeight: 900 }}>{t("Scan. Value. Trace.")}<br />{t("Recycle Right!")}</h1>
                     <div style={{ marginBottom: 32 }}>
                         <div style={{ fontSize: '1.1rem', color: 'var(--color-primary)', fontWeight: 700, marginBottom: 16 }}>{t("The ReVoCo ecosystem benefits")}</div>
                         <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
                             {[
-                                "Spot & Report Waste Anomalies",
-                                "Verified Community Cleanups",
-                                "Earn Eco-Credits & Rewards",
-                                "Transparent NGO Donations"
+                                "AI-Powered Waste Identification",
+                                "Fair Prices from Live Market Rates",
+                                "QR-Tracked Digital Waste Lots",
+                                "Direct Links to Verified Recyclers"
                             ].map((item, i) => (
                                 <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', color: 'var(--color-text-light)', fontSize: '1.05rem', fontWeight: 500 }}>
                                     <CheckCircle2 size={18} color="var(--color-primary)" /> {item}

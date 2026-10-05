@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import axios from '../api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Megaphone, Trash2, LayoutDashboard, CheckCircle, Clock } from 'lucide-react';
 import { toast } from 'react-toastify';
@@ -26,31 +26,31 @@ const SocietyDashboard = () => {
     const [announcementMsg, setAnnouncementMsg] = useState('');
     const [collectionDetails, setCollectionDetails] = useState('');
 
-    useEffect(() => {
-        fetchSociety();
-        const intervalId = setInterval(fetchSociety, 10000);
-        return () => clearInterval(intervalId);
-    }, []);
-
     const fetchSociety = async () => {
         try {
-            const res = await axios.get(`http://127.0.0.1:5000/api/society/admin/${user.id}`);
+            const res = await axios.get(`/api/society/admin/${user.id}`);
             if (res.data.length > 0) {
                 const soc = res.data[0];
                 setSociety(soc);
                 fetchSocietyContent(soc.id);
                 fetchCollectionRequests(); // Fetch specifically for this society admin
             }
-        } catch (err) {
+        } catch {
             console.error("No society found or error");
         }
     };
 
+    useEffect(() => {
+        fetchSociety();
+        const intervalId = setInterval(fetchSociety, 10000);
+        return () => clearInterval(intervalId);
+    }, []);
+
     const fetchSocietyContent = async (societyId) => {
         try {
             const [mRes, aRes] = await Promise.all([
-                axios.get(`http://127.0.0.1:5000/api/society/${societyId}/members`),
-                axios.get(`http://127.0.0.1:5000/api/society/${societyId}/announcements`)
+                axios.get(`/api/society/${societyId}/members`),
+                axios.get(`/api/society/${societyId}/announcements`)
             ]);
             setMembers(mRes.data);
             setAnnouncements(aRes.data);
@@ -61,7 +61,7 @@ const SocietyDashboard = () => {
 
     const fetchCollectionRequests = async () => {
         try {
-            const res = await axios.get(`http://127.0.0.1:5000/api/waste/requests/society/${user.id}`);
+            const res = await axios.get(`/api/waste/requests/society/${user.id}`);
             setCollectionRequests(res.data);
         } catch (err) {
             console.error("Failed to fetch requests", err);
@@ -71,7 +71,7 @@ const SocietyDashboard = () => {
     const handleCreateSociety = async (e) => {
         e.preventDefault();
         try {
-            await axios.post('http://127.0.0.1:5000/api/society/create', { ...createSocietyData, admin_id: user.id });
+            await axios.post('/api/society/create', { ...createSocietyData, admin_id: user.id });
             toast.success(t("Society established successfully."));
             fetchSociety();
         } catch (err) {
@@ -81,7 +81,7 @@ const SocietyDashboard = () => {
 
     const handleUpdateMemberStatus = async (membershipId, status) => {
         try {
-            await axios.put(`http://127.0.0.1:5000/api/society/membership/${membershipId}/status`, { status });
+            await axios.put(`/api/society/membership/${membershipId}/status`, { status });
             toast.success(`Member request ${status}.`);
             fetchSocietyContent(society.id);
         } catch (err) {
@@ -93,7 +93,7 @@ const SocietyDashboard = () => {
         e.preventDefault();
         if (!announcementMsg.trim()) return;
         try {
-            await axios.post(`http://127.0.0.1:5000/api/society/${society.id}/announcements`, {
+            await axios.post(`/api/society/${society.id}/announcements`, {
                 message: announcementMsg, author_id: user.id
             });
             toast.success(t("Announcement broadcasted."));
@@ -112,7 +112,7 @@ const SocietyDashboard = () => {
 
         navigator.geolocation.getCurrentPosition(async (pos) => {
             try {
-                await axios.post('http://127.0.0.1:5000/api/waste/requests', {
+                await axios.post('/api/waste/requests', {
                     user_id: user.id,
                     location_details: collectionDetails,
                     city: user.city || '',
@@ -133,7 +133,7 @@ const SocietyDashboard = () => {
 
     const handleVerifyRequest = async (reqId) => {
         try {
-            const res = await axios.post(`http://127.0.0.1:5000/api/waste/requests/${reqId}/verify`);
+            const res = await axios.post(`/api/waste/requests/${reqId}/verify`);
             const pts = res.data.points_awarded;
             toast.success(`✅ Verified! Points awarded — You: +${pts.society}, Helper: +${pts.helper}, Municipality: +${pts.municipality}`);
             fetchCollectionRequests();

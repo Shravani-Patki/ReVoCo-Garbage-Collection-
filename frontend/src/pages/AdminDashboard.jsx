@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import axios from '../api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BarChart3, Users, IndianRupee, Server, Database, Activity, ShieldCheck, Home, Trash2, FolderEdit, Map as MapIcon } from 'lucide-react';
 import { toast } from 'react-toastify';
@@ -72,28 +72,28 @@ const AdminDashboard = () => {
 
     const fetchStats = async () => {
         try {
-            const res = await axios.get('http://127.0.0.1:5000/api/gamification/stats');
+            const res = await axios.get('/api/gamification/stats');
             setStats(res.data);
         } catch (err) { }
     };
 
     const fetchUsers = async () => {
         try {
-            const res = await axios.get('http://127.0.0.1:5000/api/admin/users');
+            const res = await axios.get('/api/admin/users');
             setUsers(res.data);
         } catch (e) { toast.error(t("Failed to fetch users")); }
     };
 
     const fetchSocieties = async () => {
         try {
-            const res = await axios.get('http://127.0.0.1:5000/api/admin/societies');
+            const res = await axios.get('/api/admin/societies');
             setSocieties(res.data);
         } catch (e) { toast.error(t("Failed to fetch societies")); }
     };
 
     const fetchWasteIssues = async () => {
         try {
-            const res = await axios.get('http://127.0.0.1:5000/api/waste/issues?status=all');
+            const res = await axios.get('/api/waste/issues?status=all');
             setWasteIssues(res.data);
         } catch (e) { toast.error(t("Failed to fetch waste issues")); }
     };
@@ -102,7 +102,7 @@ const AdminDashboard = () => {
     const deleteUser = async (id) => {
         if (!window.confirm(`Delete user ${id}? This cannot be undone.`)) return;
         try {
-            await axios.delete(`http://127.0.0.1:5000/api/admin/users/${id}`);
+            await axios.delete(`/api/admin/users/${id}`);
             toast.success(t("User purged from system"));
             fetchUsers();
         } catch (e) { toast.error(t("Failed to delete user")); }
@@ -111,7 +111,7 @@ const AdminDashboard = () => {
     const deleteSociety = async (id) => {
         if (!window.confirm(`Delete society ${id}?`)) return;
         try {
-            await axios.delete(`http://127.0.0.1:5000/api/admin/societies/${id}`);
+            await axios.delete(`/api/admin/societies/${id}`);
             toast.success(t("Society deleted"));
             fetchSocieties();
         } catch (e) { toast.error(t("Failed to delete society")); }
@@ -120,7 +120,7 @@ const AdminDashboard = () => {
     const deleteWasteReport = async (id) => {
         if (!window.confirm(`Delete report ${id}?`)) return;
         try {
-            await axios.delete(`http://127.0.0.1:5000/api/admin/waste/${id}`);
+            await axios.delete(`/api/admin/waste/${id}`);
             toast.success(t("Waste report deleted"));
             fetchWasteIssues();
         } catch (e) { toast.error(t("Failed to delete report")); }
@@ -129,7 +129,7 @@ const AdminDashboard = () => {
     const handleSimulateDonation = async () => {
         const toastId = toast.loading(t("Transmitting funds to the global pool..."));
         try {
-            await axios.post('http://127.0.0.1:5000/api/gamification/donate', { amount: 10000 });
+            await axios.post('/api/gamification/donate', { amount: 10000 });
             toast.update(toastId, { render: t("Injection Successful: +₹10,000 received."), type: "success", isLoading: false, autoClose: 3000 });
             fetchStats();
         } catch (e) {

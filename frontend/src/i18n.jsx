@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { useEffect, useSyncExternalStore } from 'react';
+import api from './api';
 import en from './locales/en.json';
 import hi from './locales/hi.json';
 import mr from './locales/mr.json';
@@ -63,27 +64,23 @@ const flushTranslations = async (language) => {
     const texts = [...(pending.get(language) || [])];
     pending.delete(language);
     if (!texts.length || language === 'en') return;
-    const user = getUser();
-    const headers = { 'Content-Type': 'application/json' };
-    if (user?.token) headers.Authorization = `Bearer ${user.token}`;
     try {
         for (let offset = 0; offset < texts.length; offset += 20) {
             const batch = texts.slice(offset, offset + 20);
-            const response = await fetch('http://127.0.0.1:5000/api/i18n/translate', {
-                method: 'POST',
-                headers,
-                body: JSON.stringify({ texts: batch, target_language: language }),
-            });
-            if (!response.ok) {
-                batch.forEach(text => failedUntil.set(translationCacheKey(language, text), Date.now() + 60000));
-                continue;
-            }
-            const result = await response.json();
-            for (const [source, translated] of Object.entries(result.translations || {})) {
-                if (typeof translated === 'string' && translated.trim()) {
-                    cache[translationCacheKey(language, source)] = translated;
-                    failedUntil.delete(translationCacheKey(language, source));
+            try {
+                const response = await api.post('/api/i18n/translate', {
+                    texts: batch,
+                    target_language: language,
+                });
+                const result = response.data;
+                for (const [source, translated] of Object.entries(result.translations || {})) {
+                    if (typeof translated === 'string' && translated.trim()) {
+                        cache[translationCacheKey(language, source)] = translated;
+                        failedUntil.delete(translationCacheKey(language, source));
+                    }
                 }
+            } catch {
+                batch.forEach(text => failedUntil.set(translationCacheKey(language, text), Date.now() + 60000));
             }
         }
         try { localStorage.setItem(CACHE_KEY, JSON.stringify(cache)); } catch { /* Cache is optional. */ }
@@ -186,11 +183,7 @@ export const useI18n = () => {
         const user = getUser();
         localStorage.setItem(userLanguageStorageKey(user), nextLanguage);
         if (!user?.id || !user?.token) return;
-        fetch('http://127.0.0.1:5000/api/auth/language', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.token}` },
-            body: JSON.stringify({ language: nextLanguage }),
-        }).catch(() => {});
+        api.post('/api/auth/language', { language: nextLanguage }).catch(() => {});
     };
     return { language, changeLanguage };
 };

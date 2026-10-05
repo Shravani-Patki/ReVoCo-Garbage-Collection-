@@ -4,13 +4,12 @@ import {
     Users, Award, Map as MapIcon, Megaphone, Upload,
     Heart, Coins, Navigation, FileText, Star, Trophy, Truck
 } from 'lucide-react';
-import axios from 'axios';
+import axios from '../api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { UserWastePanel } from './WasteMarketplace';
 import { formatCurrency, formatDate, formatNumber, t } from "../i18n";
 
-const BASE = 'http://127.0.0.1:5000';
 
 const pageVariants = {
     initial: { opacity: 0, y: 10 },
@@ -89,7 +88,7 @@ const UserDashboard = () => {
 
     const fetchUserData = async () => {
         try {
-            const res = await axios.get(`${BASE}/api/waste/issues?user_id=${user.id}&status=all`);
+            const res = await axios.get(`/api/waste/issues?user_id=${user.id}&status=all`);
             const reports = res.data;
             let recycled = 0, credits = 0;
             reports.forEach(r => {
@@ -105,8 +104,8 @@ const UserDashboard = () => {
     const fetchGrievances = async () => {
         try {
             const url = grievanceFilter === 'me'
-                ? `${BASE}/api/waste/issues?user_id=${user.id}&status=all`
-                : `${BASE}/api/waste/issues?status=all`;
+                ? `/api/waste/issues?user_id=${user.id}&status=all`
+                : `/api/waste/issues?status=all`;
             const res = await axios.get(url);
             setGrievances(res.data);
         } catch (e) { console.error(e); }
@@ -114,15 +113,15 @@ const UserDashboard = () => {
 
     const fetchSocietyInfo = async () => {
         try {
-            const res = await axios.get(`${BASE}/api/society/member/${user.id}`);
+            const res = await axios.get(`/api/society/member/${user.id}`);
             if (res.data.length > 0) {
                 const m = res.data[0];
                 setSocietyStatus(m.status);
                 setSocietyData(m);
                 if (m.status === 'accepted') {
                     const [aRes, lRes] = await Promise.all([
-                        axios.get(`${BASE}/api/society/${m.society_id}/announcements`),
-                        axios.get(`${BASE}/api/society/${m.society_id}/leaderboard`),
+                        axios.get(`/api/society/${m.society_id}/announcements`),
+                        axios.get(`/api/society/${m.society_id}/leaderboard`),
                     ]);
                     setAnnouncements(aRes.data);
                     setLeaderboard(lRes.data);
@@ -133,7 +132,7 @@ const UserDashboard = () => {
 
     const fetchGlobalLeaderboard = async () => {
         try {
-            const res = await axios.get(`${BASE}/api/gamification/leaderboard/contributors`);
+            const res = await axios.get(`/api/gamification/leaderboard/contributors`);
             setGlobalLeaderboard(res.data);
             const count = res.data.filter((u, i) => i < 3 && u.username === user.username).length;
             setTopCount(count); // simplified: check if user appears in top 3
@@ -143,7 +142,7 @@ const UserDashboard = () => {
     const handleJoinSociety = async (e) => {
         e.preventDefault();
         try {
-            await axios.post(`${BASE}/api/society/join`, { user_id: user.id, society_code: joinCode });
+            await axios.post(`/api/society/join`, { user_id: user.id, society_code: joinCode });
             toast.success(t("Join request sent!"));
             fetchSocietyInfo();
         } catch (e) { toast.error(e.response?.data?.error || 'Error joining society'); }
@@ -166,7 +165,9 @@ const UserDashboard = () => {
                     label = d.display_name || label;
                     city = d.address?.city || d.address?.town || d.address?.village || d.address?.county || '';
                     state = d.address?.state || '';
-                } catch (_) { }
+                } catch {
+                    // no-op: geocoding failure falls back to raw coordinates
+                }
                 setReportLocation({ lat, lng, label, city, state, address_text: label });
                 setGettingLocation(false);
                 toast.success(t("Location captured!"));
@@ -190,7 +191,7 @@ const UserDashboard = () => {
         try {
             let imageUrl = '';
             if (reportImage) imageUrl = await fileToBase64(reportImage);
-            const res = await axios.post(`${BASE}/api/waste/report`, {
+            await axios.post(`/api/waste/report`, {
                 user_id: user.id,
                 image_url: imageUrl,
                 latitude: reportLocation.lat,
@@ -209,7 +210,7 @@ const UserDashboard = () => {
 
     const handleVerifyCompletion = async (issueId) => {
         try {
-            await axios.post(`${BASE}/api/waste/${issueId}/verify`, { status: 'verified' });
+            await axios.post(`/api/waste/${issueId}/verify`, { status: 'verified' });
             toast.success(t("Cleanup verified! Rewards distributed."));
             fetchGrievances();
             fetchUserData();
@@ -233,7 +234,7 @@ const UserDashboard = () => {
         const toastId = toast.loading(t("🤖 AI is analysing your waste..."));
         try {
             const base64 = await fileToBase64(classifyImage);
-            const res = await axios.post(`${BASE}/api/classify`, { image: base64 });
+            const res = await axios.post(`/api/classify`, { image: base64 });
             setClassifyResult(res.data);
             toast.update(toastId, { render: `✅ Classified as ${res.data.category}!`, type: 'success', isLoading: false, autoClose: 3000 });
         } catch (err) {
@@ -249,7 +250,7 @@ const UserDashboard = () => {
         setDonating(true);
         const toastId = toast.loading(t("Processing donation..."));
         try {
-            const res = await axios.post(`${BASE}/api/gamification/donate`, { amount: Number(donateAmount), user_id: user.id });
+            const res = await axios.post(`/api/gamification/donate`, { amount: Number(donateAmount), user_id: user.id });
             setPoolBalance(res.data.total_pool);
             toast.update(toastId, { render: t('💚 Thank you! {{amount}} donated. Pool: {{total}}', { amount: formatCurrency(donateAmount), total: formatCurrency(res.data.total_pool) }), type: 'success', isLoading: false, autoClose: 4000 });
             setDonateAmount('');

@@ -1,16 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import axios from 'axios';
 import { AnimatePresence } from 'framer-motion';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import VoiceLanguageControls from './components/VoiceLanguageControls';
-
-axios.interceptors.request.use((config) => {
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
-  if (user?.token) config.headers.Authorization = `Bearer ${user.token}`;
-  return config;
-});
 
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
@@ -33,17 +26,11 @@ const DASHBOARD_LINKS = {
 // Re-reads user from localStorage on every route change
 function Navbar() {
   const location = useLocation();
-  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user') || 'null'));
-
-  // Re-check auth whenever the URL changes (after login redirect)
-  useEffect(() => {
-    setUser(JSON.parse(localStorage.getItem('user') || 'null'));
-  }, [location.pathname]);
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
 
   const handleLogout = () => {
     localStorage.removeItem('user');
     window.dispatchEvent(new Event('revoco-user-changed'));
-    setUser(null);
     window.location.href = '/';
   };
 

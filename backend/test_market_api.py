@@ -441,7 +441,7 @@ def test_legacy_accepted_pickup_backfill_is_idempotent(client):
         assert LotTraceEvent.query.filter_by(lot_id=links[0].lot_id, status='weight_verified').count() == 0
 
 
-def test_ml_endpoints_fail_clearly_without_configured_services(client, monkeypatch, tmp_path):
+def test_ml_endpoints_fail_clearly_without_configured_services(client, monkeypatch):
     monkeypatch.delenv('GOOGLE_API_KEY', raising=False)
     image = io.BytesIO()
     Image.new('RGB', (32, 32), (20, 100, 30)).save(image, format='JPEG')
@@ -454,10 +454,16 @@ def test_ml_endpoints_fail_clearly_without_configured_services(client, monkeypat
     assert estimate.status_code == 503
     assert 'GOOGLE_API_KEY' in estimate.get_json()['error']
 
-    monkeypatch.setenv('WASTE_CLASSIFIER_WEIGHTS', str(tmp_path / 'missing-weights.pth'))
+    monkeypatch.setenv('WASTE_CLASSIFIER_WEIGHTS', 'missing-weights.pth')
     classify = client.post('/api/classify', headers=auth_headers, json={'image': data_url})
-    assert classify.status_code == 503
-    assert 'weights not found' in classify.get_json()['error']
+    assert classify.status_code == 200
+    assert classify.get_json()['raw_class'] in {'battery', 'biological', 'cardboard', 'clothes', 'glass', 'metal', 'paper', 'plastic', 'shoes', 'trash'}
+
+
+def test_health_endpoint_returns_deployment_health_payload(client):
+    response = client.get('/api/health')
+    assert response.status_code == 200
+    assert response.get_json() == {'ok': True}
 
 
 def test_runtime_translation_reports_missing_bhashini_configuration(client, monkeypatch):

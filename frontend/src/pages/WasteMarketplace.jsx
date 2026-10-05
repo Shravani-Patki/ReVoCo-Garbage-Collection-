@@ -1,11 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import axios from 'axios';
+import axios from '../api';
 import { toast } from 'react-toastify';
 import { Activity, ImagePlus, IndianRupee, MapPin, Package, Truck, X } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { formatCurrency, formatDate, formatNumber, t } from "../i18n";
 
-const BASE = 'http://127.0.0.1:5000';
 const WASTE_TYPES = ['E-waste', 'Paper', 'Cardboard', 'Plastic', 'Metal', 'Glass', 'Other'];
 
 const cardStyle = { boxShadow: 'var(--shadow-md)' };
@@ -32,7 +31,7 @@ const MarketRates = ({ rates }) => {
     const [history, setHistory] = useState([]);
     useEffect(() => {
         const location = rates[0] ? `?city=${encodeURIComponent(rates[0].city)}&state=${encodeURIComponent(rates[0].state)}` : '';
-        axios.get(`${BASE}/api/market/rates/history${location}`)
+        axios.get(`/api/market/rates/history${location}`)
             .then(response => setHistory(response.data))
             .catch(error => console.error('Failed to load rate history', error));
     }, [rates]);
@@ -86,11 +85,11 @@ const UserWastePanel = ({ user, activeTab }) => {
             const location = new URLSearchParams({ city: user.city || '', state: user.state || '' });
             try {
                 const [pickups, rates, drives, materialCatalog, transactions] = await Promise.all([
-                    axios.get(`${BASE}/api/market/pickups?user_id=${user.id}`),
-                    axios.get(`${BASE}/api/market/rates?${location}`),
-                    axios.get(`${BASE}/api/market/drives?${location}`),
-                    axios.get(`${BASE}/api/market/materials`),
-                    axios.get(`${BASE}/api/market/transactions/mine`),
+                    axios.get(`/api/market/pickups?user_id=${user.id}`),
+                    axios.get(`/api/market/rates?${location}`),
+                    axios.get(`/api/market/drives?${location}`),
+                    axios.get(`/api/market/materials`),
+                    axios.get(`/api/market/transactions/mine`),
                 ]);
                 if (active) {
                     setMarket({ ...emptyMarket, pickups: pickups.data, rates: rates.data, drives: drives.data, transactions: transactions.data });
@@ -111,7 +110,7 @@ const UserWastePanel = ({ user, activeTab }) => {
         if (photo.size > 20 * 1024 * 1024) return toast.error(t("Choose an image smaller than 20 MB."));
         const form = event.currentTarget;
         try {
-            const response = await axios.post(`${BASE}/api/market/pickups`, {
+            const response = await axios.post(`/api/market/pickups`, {
                 user_id: user.id,
                 material: pickup.material,
                 quantity: Number(pickup.quantity),
@@ -142,8 +141,8 @@ const UserWastePanel = ({ user, activeTab }) => {
         try {
             const image = await compressImage(photo);
             const [classificationResult, estimateResult] = await Promise.allSettled([
-                axios.post(`${BASE}/api/classify`, { image }),
-                axios.post(`${BASE}/api/waste/estimate`, { image }),
+                axios.post(`/api/classify`, { image }),
+                axios.post(`/api/waste/estimate`, { image }),
             ]);
             const classification = classificationResult.status === 'fulfilled' ? classificationResult.value.data : null;
             const estimate = estimateResult.status === 'fulfilled' ? estimateResult.value.data : null;
@@ -179,7 +178,7 @@ const UserWastePanel = ({ user, activeTab }) => {
 
     const confirmReceipt = async (pickupItem) => {
         try {
-            const response = await axios.post(`${BASE}/api/market/lots/${pickupItem.lot_record_id}/customer-payment/confirm`);
+            const response = await axios.post(`/api/market/lots/${pickupItem.lot_record_id}/customer-payment/confirm`);
             setMarket(current => ({
                 ...current,
                 pickups: current.pickups.map(item => item.id === pickupItem.id
@@ -210,7 +209,7 @@ const UserWastePanel = ({ user, activeTab }) => {
         const reader = new FileReader();
         reader.onload = async () => {
             try {
-                const response = await axios.post(`${BASE}/api/waste/estimate`, { image: reader.result });
+                const response = await axios.post(`/api/waste/estimate`, { image: reader.result });
                 setEstimate(response.data);
             } catch (error) {
                 toast.error(error.response?.data?.error || 'The weight and volume estimation service is not available.');
@@ -353,14 +352,14 @@ const MarketRoleDashboard = ({ role }) => {
             const location = new URLSearchParams({ city: user.city || '', state: user.state || '' });
             try {
                 const [pickups, lots, trades, rates, materialCatalog, transactions, requirements, drives] = await Promise.all([
-                    isCollector ? axios.get(`${BASE}/api/market/pickups?collector_id=${user.id}`) : Promise.resolve({ data: [] }),
-                    axios.get(isCollector ? `${BASE}/api/market/lots?collector_id=${user.id}` : `${BASE}/api/market/lots`),
-                    axios.get(`${BASE}/api/market/trades?user_id=${user.id}`),
-                    axios.get(`${BASE}/api/market/rates?${location}`),
-                    axios.get(`${BASE}/api/market/materials`),
-                    axios.get(`${BASE}/api/market/transactions/mine`),
-                    axios.get(`${BASE}/api/market/requirements`),
-                    axios.get(`${BASE}/api/market/drives?${location}`),
+                    isCollector ? axios.get(`/api/market/pickups?collector_id=${user.id}`) : Promise.resolve({ data: [] }),
+                    axios.get(isCollector ? `/api/market/lots?collector_id=${user.id}` : `/api/market/lots`),
+                    axios.get(`/api/market/trades?user_id=${user.id}`),
+                    axios.get(`/api/market/rates?${location}`),
+                    axios.get(`/api/market/materials`),
+                    axios.get(`/api/market/transactions/mine`),
+                    axios.get(`/api/market/requirements`),
+                    axios.get(`/api/market/drives?${location}`),
                 ]);
                 if (active) {
                     setMarket({ ...emptyMarket, pickups: pickups.data, lots: lots.data, trades: trades.data, rates: rates.data, transactions: transactions.data, requirements: requirements.data, drives: drives.data });
@@ -377,7 +376,7 @@ const MarketRoleDashboard = ({ role }) => {
 
     const acceptPickup = async (pickupId) => {
         try {
-            const response = await axios.post(`${BASE}/api/market/pickups/${pickupId}/accept`, { collector_id: user.id });
+            const response = await axios.post(`/api/market/pickups/${pickupId}/accept`, { collector_id: user.id });
             setMarket(current => ({ ...current, pickups: current.pickups.map(item => item.id === pickupId ? response.data : item) }));
             toast.success(t("Pickup accepted."));
         } catch (error) {
@@ -389,7 +388,7 @@ const MarketRoleDashboard = ({ role }) => {
         if (!navigator.geolocation) return toast.error(t('Geolocation is not supported by this browser.'));
         navigator.geolocation.getCurrentPosition(async position => {
             try {
-                await axios.post(`${BASE}/api/market/collector/location`, {
+                await axios.post(`/api/market/collector/location`, {
                     latitude: position.coords.latitude,
                     longitude: position.coords.longitude,
                 });
@@ -402,7 +401,7 @@ const MarketRoleDashboard = ({ role }) => {
 
     const acceptTrade = async (tradeId) => {
         try {
-            const response = await axios.post(`${BASE}/api/market/trades/${tradeId}/accept`, { collector_id: user.id });
+            const response = await axios.post(`/api/market/trades/${tradeId}/accept`, { collector_id: user.id });
             setMarket(current => ({ ...current, trades: current.trades.map(item => item.id === tradeId ? response.data : item) }));
             toast.success(t("Lot request accepted. Payment is pending."));
         } catch (error) {
@@ -412,7 +411,7 @@ const MarketRoleDashboard = ({ role }) => {
 
     const verifyWeight = async (item) => {
         try {
-            const response = await axios.post(`${BASE}/api/market/lots/${item.id}/weight`, {
+            const response = await axios.post(`/api/market/lots/${item.id}/weight`, {
                 confirmed_weight_kg: Number(weightInputs[item.id]),
             });
             setMarket(current => ({
@@ -430,7 +429,7 @@ const MarketRoleDashboard = ({ role }) => {
 
     const reportCustomerPayment = async (item) => {
         try {
-            const response = await axios.post(`${BASE}/api/market/lots/${item.id}/customer-payment`, {
+            const response = await axios.post(`/api/market/lots/${item.id}/customer-payment`, {
                 payment_method: paymentMethods[item.id] || 'cash',
             });
             setMarket(current => ({
@@ -447,7 +446,7 @@ const MarketRoleDashboard = ({ role }) => {
 
     const updateRecycling = async (item, status) => {
         try {
-            const response = await axios.post(`${BASE}/api/market/lots/${item.lot_id}/recycling`, { status });
+            const response = await axios.post(`/api/market/lots/${item.lot_id}/recycling`, { status });
             setMarket(current => ({
                 ...current,
                 trades: current.trades.map(trade => trade.lot_id === item.lot_id
@@ -464,7 +463,7 @@ const MarketRoleDashboard = ({ role }) => {
         event.preventDefault();
         const form = event.currentTarget;
         try {
-            const response = await axios.post(`${BASE}/api/market/lots`, { collector_id: user.id, ...lot });
+            const response = await axios.post(`/api/market/lots`, { collector_id: user.id, ...lot });
             setMarket(current => ({ ...current, lots: [response.data, ...current.lots] }));
             setLot({ material: WASTE_TYPES[0], quantity: '', price: '' });
             form.reset();
@@ -476,7 +475,7 @@ const MarketRoleDashboard = ({ role }) => {
 
     const requestLot = async (selectedLot) => {
         try {
-            const response = await axios.post(`${BASE}/api/market/lots/${selectedLot.id}/request`, { company_id: user.id });
+            const response = await axios.post(`/api/market/lots/${selectedLot.id}/request`, { company_id: user.id });
             setMarket(current => ({ ...current, trades: [response.data, ...current.trades], lots: current.lots.filter(item => item.id !== selectedLot.id) }));
             toast.success(t("Lot request sent to the collector."));
         } catch (error) {
@@ -486,7 +485,7 @@ const MarketRoleDashboard = ({ role }) => {
 
     const markPaid = async (trade) => {
         try {
-            const response = await axios.post(`${BASE}/api/market/trades/${trade.id}/payments`, {
+            const response = await axios.post(`/api/market/trades/${trade.id}/payments`, {
                 company_id: user.id,
                 payment_method: paymentMethods[trade.lot_id] || 'manual_record',
                 payment_reference: paymentReferences[trade.id] || '',
@@ -501,7 +500,7 @@ const MarketRoleDashboard = ({ role }) => {
     const publishRequirement = async (event) => {
         event.preventDefault();
         try {
-            const response = await axios.post(`${BASE}/api/market/requirements`, {
+            const response = await axios.post(`/api/market/requirements`, {
                 ...requirement,
                 quantity_kg: Number(requirement.quantity_kg),
             });
@@ -563,10 +562,10 @@ const MunicipalMarketPanel = () => {
             const location = new URLSearchParams({ city: user.city || '', state: user.state || '' });
             try {
                 const [companies, rates, drives, materialCatalog] = await Promise.all([
-                    axios.get(`${BASE}/api/market/companies?municipality_id=${user.id}`),
-                    axios.get(`${BASE}/api/market/rates?${location}`),
-                    axios.get(`${BASE}/api/market/drives?${location}`),
-                    axios.get(`${BASE}/api/market/materials`),
+                    axios.get(`/api/market/companies?municipality_id=${user.id}`),
+                    axios.get(`/api/market/rates?${location}`),
+                    axios.get(`/api/market/drives?${location}`),
+                    axios.get(`/api/market/materials`),
                 ]);
                 if (active) {
                     setMarket({ ...emptyMarket, companies: companies.data, rates: rates.data, drives: drives.data });
@@ -584,7 +583,7 @@ const MunicipalMarketPanel = () => {
     const publishRate = async (event) => {
         event.preventDefault();
         try {
-            const response = await axios.post(`${BASE}/api/market/rates`, { municipality_id: user.id, material: rate.material, price: Number(rate.price), effective_date: rate.effectiveDate, source: rate.source });
+            const response = await axios.post(`/api/market/rates`, { municipality_id: user.id, material: rate.material, price: Number(rate.price), effective_date: rate.effectiveDate, source: rate.source });
             setMarket(current => ({ ...current, rates: [response.data, ...current.rates.filter(item => item.material !== response.data.material)] }));
             setRate({ material: WASTE_TYPES[0], price: '', effectiveDate: '', source: '' });
             toast.success(t("Local material rate published."));
@@ -596,7 +595,7 @@ const MunicipalMarketPanel = () => {
     const publishDrive = async (event) => {
         event.preventDefault();
         try {
-            const response = await axios.post(`${BASE}/api/market/drives`, { municipality_id: user.id, ...drive });
+            const response = await axios.post(`/api/market/drives`, { municipality_id: user.id, ...drive });
             setMarket(current => ({ ...current, drives: [response.data, ...current.drives] }));
             setDrive({ title: '', date: '', location: '', details: '' });
             toast.success(t("E-waste drive announced to users."));
@@ -609,7 +608,7 @@ const MunicipalMarketPanel = () => {
         event.preventDefault();
         if (!/^\d{10}$/.test(company.cpcbCode)) return toast.error(t("CPCB code must contain exactly 10 digits."));
         try {
-            const response = await axios.post(`${BASE}/api/market/companies`, { municipality_id: user.id, name: company.name, cpcb_code: company.cpcbCode, email: company.email });
+            const response = await axios.post(`/api/market/companies`, { municipality_id: user.id, name: company.name, cpcb_code: company.cpcbCode, email: company.email });
             setMarket(current => ({ ...current, companies: [response.data, ...current.companies] }));
             setCompany({ name: '', cpcbCode: '', email: '' });
             toast.success(t("Company added for verification."));
@@ -620,7 +619,7 @@ const MunicipalMarketPanel = () => {
 
     const updateCompanyStatus = async (companyId) => {
         try {
-            const response = await axios.post(`${BASE}/api/market/companies/${companyId}/verify`, { municipality_id: user.id });
+            const response = await axios.post(`/api/market/companies/${companyId}/verify`, { municipality_id: user.id });
             setMarket(current => ({ ...current, companies: current.companies.map(item => item.id === companyId ? response.data : item) }));
             toast.success(t("Company CPCB registration verified."));
         } catch (error) {

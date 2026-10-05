@@ -1,0 +1,11 @@
+.git
+.venv
+venv
+node_modules
+frontend
+**/__pycache__
+**/*.py[cod]
+**/*.db
+.env
+.env.*
+!.env.example

@@ -1,14 +1,22 @@
 # ReVoCo Backend
 
-Run commands from this directory after installing dependencies with `python -m pip install -r requirements.txt`.
+Run commands from this directory after installing CPU-only PyTorch and the remaining dependencies:
 
-Start the API with `python app.py`. SQLite data is stored in `revoco.db`; new marketplace tables are created on startup without deleting existing records.
+```powershell
+python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+python -m pip install -r requirements.txt
+Copy-Item .env.example .env
+```
 
-Set `REVOCO_SECRET_KEY` to a long, random secret before deployment. Signup and login return signed bearer tokens that expire after 12 hours by default; `REVOCO_TOKEN_TTL_SECONDS` can override the lifetime. The built-in development secret must not be used in production.
+Start the API with `python app.py`. `SECRET_KEY` is required. The default local database is SQLite (`app.db`); new marketplace tables are created on startup without deleting existing records. SQLite connections use WAL mode.
+
+Set `SECRET_KEY` to a long, random secret before deployment. Signup and login return signed bearer tokens that expire after 12 hours by default; `REVOCO_TOKEN_TTL_SECONDS` can override the lifetime. CORS allows only `FRONTEND_URL` (default `http://localhost:5173`).
+
+For Render, set `DATABASE_URL` to `sqlite:////var/data/revoco.db` when the persistent disk is mounted at `/var/data`. Use the repository root as the Docker build context and `backend/Dockerfile` as the Dockerfile path.
 
 ## Waste classification
 
-The workspace `garbage_model/` extracted PyTorch archive is loaded automatically. The loader repacks it in memory for PyTorch and validates its EfficientNet-B0 10-class state dict. Set `WASTE_CLASSIFIER_WEIGHTS` to a different checkpoint file or extracted archive directory to override it. Without valid trained weights, `/api/classify` returns HTTP 503 rather than a random prediction.
+The workspace `garbage_model/` extracted PyTorch archive is loaded once at startup on CPU. The loader repacks it in memory and validates its EfficientNet-B0 10-class state dict. Set `WASTE_CLASSIFIER_WEIGHTS` to a different checkpoint file or extracted archive directory to override it. Without valid trained weights, `/api/classify` returns HTTP 503 rather than a random prediction.
 
 ## Visual weight and volume estimation
 
@@ -30,4 +38,4 @@ The lot lifecycle distinguishes pickup acceptance, collector-confirmed weight, c
 
 ## Frontend API
 
-The Vite frontend calls `http://127.0.0.1:5000`. Start the backend before testing login, registration, classification, or marketplace features. Focused route integration tests run with `python -m pytest -q test_market_api.py`.
+The frontend uses `VITE_API_URL`; local Vite development proxies `/api` to `http://localhost:5000`. `GET /api/health` returns `{"ok":true}`. Run backend tests with `python -m pytest -q`.

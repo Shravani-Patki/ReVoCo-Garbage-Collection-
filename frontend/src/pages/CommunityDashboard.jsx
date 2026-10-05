@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import axios from '../api';
 import { CheckCircle, AlertTriangle, ShieldAlert, Users, Megaphone, Award, Building, Navigation } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
@@ -72,7 +72,7 @@ const CommunityDashboard = () => {
 
     const fetchIssues = async () => {
         try {
-            const res = await axios.get('http://127.0.0.1:5000/api/waste/issues?status=reported');
+            const res = await axios.get('/api/waste/issues?status=reported');
             setIssues(res.data);
         } catch (err) {
             toast.error(t("Connection to central database lost."));
@@ -81,28 +81,28 @@ const CommunityDashboard = () => {
 
     const fetchAssignedTasks = async () => {
         try {
-            const res = await axios.get(`http://127.0.0.1:5000/api/waste/issues?assigned_to=${user.id}&status=assigned`);
+            const res = await axios.get(`/api/waste/issues?assigned_to=${user.id}&status=assigned`);
             setAssignedTasks(res.data);
         } catch (err) { }
     };
 
     const fetchAssignedCollections = async () => {
         try {
-            const res = await axios.get(`http://127.0.0.1:5000/api/waste/requests?assigned_to=${user.id}&status=assigned`);
+            const res = await axios.get(`/api/waste/requests?assigned_to=${user.id}&status=assigned`);
             setAssignedCollections(res.data);
         } catch (err) { }
     };
 
     const fetchRoute = async () => {
         try {
-            const res = await axios.get(`http://127.0.0.1:5000/api/routing/helper/${user.id}`);
+            const res = await axios.get(`/api/routing/helper/${user.id}`);
             setRouteSequence(res.data);
         } catch (err) { }
     };
 
     const fetchSociety = async () => {
         try {
-            const res = await axios.get(`http://127.0.0.1:5000/api/society/admin/${user.id}`);
+            const res = await axios.get(`/api/society/admin/${user.id}`);
             if (res.data.length > 0) {
                 setSociety(res.data[0]);
                 fetchSocietyContent(res.data[0].id);
@@ -115,9 +115,9 @@ const CommunityDashboard = () => {
     const fetchSocietyContent = async (societyId) => {
         try {
             const [mRes, lRes, aRes] = await Promise.all([
-                axios.get(`http://127.0.0.1:5000/api/society/${societyId}/members`),
-                axios.get(`http://127.0.0.1:5000/api/society/${societyId}/leaderboard`),
-                axios.get(`http://127.0.0.1:5000/api/society/${societyId}/announcements`)
+                axios.get(`/api/society/${societyId}/members`),
+                axios.get(`/api/society/${societyId}/leaderboard`),
+                axios.get(`/api/society/${societyId}/announcements`)
             ]);
             setMembers(mRes.data);
             setLeaderboard(lRes.data);
@@ -130,7 +130,7 @@ const CommunityDashboard = () => {
     const handleCreateSociety = async (e) => {
         e.preventDefault();
         try {
-            await axios.post('http://127.0.0.1:5000/api/society/create', {
+            await axios.post('/api/society/create', {
                 ...createSocietyData,
                 admin_id: user.id
             });
@@ -143,7 +143,7 @@ const CommunityDashboard = () => {
 
     const handleUpdateMemberStatus = async (membershipId, status) => {
         try {
-            await axios.put(`http://127.0.0.1:5000/api/society/membership/${membershipId}/status`, { status });
+            await axios.put(`/api/society/membership/${membershipId}/status`, { status });
             toast.success(`Member request ${status}.`);
             fetchSocietyContent(society.id);
         } catch (err) {
@@ -155,7 +155,7 @@ const CommunityDashboard = () => {
         e.preventDefault();
         if (!announcementMsg.trim()) return;
         try {
-            await axios.post(`http://127.0.0.1:5000/api/society/${society.id}/announcements`, {
+            await axios.post(`/api/society/${society.id}/announcements`, {
                 message: announcementMsg,
                 author_id: user.id
             });
@@ -169,7 +169,7 @@ const CommunityDashboard = () => {
 
     const verifyIssue = async (id) => {
         try {
-            await axios.post(`http://127.0.0.1:5000/api/waste/${id}/verify`, { status: 'seen' });
+            await axios.post(`/api/waste/${id}/verify`, { status: 'seen' });
             toast.success(`Verification complete for Report #${id}. Proceeding to Fleet Command.`);
             fetchIssues();
             if (society) fetchSocietyContent(society.id);
@@ -192,7 +192,7 @@ const CommunityDashboard = () => {
         setSubmittingTaskId(taskId);
         try {
             const base64Img = await fileToBase64(img);
-            await axios.post(`http://127.0.0.1:5000/api/waste/${taskId}/verify`, { status: 'completed', completed_image_url: base64Img });
+            await axios.post(`/api/waste/${taskId}/verify`, { status: 'completed', completed_image_url: base64Img });
             toast.success(t("Task marked as completed. Awaiting citizen verification."));
             setCompletionImage(p => { const n = { ...p }; delete n[taskId]; return n; });
             fetchAssignedTasks();
@@ -207,7 +207,7 @@ const CommunityDashboard = () => {
         const toastId = toast.loading(t("Uploading & estimating waste volume via AI..."));
         try {
             const base64Img = await fileToBase64(img);
-            const res = await axios.post(`http://127.0.0.1:5000/api/waste/requests/${reqId}/complete`, { completed_image_url: base64Img });
+            const res = await axios.post(`/api/waste/requests/${reqId}/complete`, { completed_image_url: base64Img });
             toast.update(toastId, { render: t('✅ Completed! AI estimated {{weight}} kg. Awaiting society verification.', { weight: formatNumber(res.data.volume_estimated) }), type: 'success', isLoading: false, autoClose: 5000 });
             setCompletionImage(p => { const n = { ...p }; delete n[`req_${reqId}`]; return n; });
             fetchAssignedCollections();

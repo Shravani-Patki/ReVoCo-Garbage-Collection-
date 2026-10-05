@@ -13,15 +13,15 @@ ReVoCo is a community waste-management platform that connects citizens, communit
 
 ## Technology
 
-- Frontend: React, Vite, React Router, Leaflet
-- Backend: Flask, Flask-SQLAlchemy, SQLite
-- Waste classification: PyTorch and the included `garbage_model/` checkpoint
+- Frontend: React, Vite, React Router, Axios, Leaflet
+- Backend: Flask, Flask-SQLAlchemy, SQLite, Gunicorn
+- Waste classification: CPU PyTorch/EfficientNet-B0 and the included `garbage_model/` checkpoint
 
 ## Run Locally
 
 ### Requirements
 
-- Python 3.10 or newer
+- Python 3.11 or newer
 - Node.js and npm
 
 ### Backend
@@ -32,7 +32,11 @@ From the repository root, create and activate a virtual environment, then instal
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r backend/requirements.txt
+python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+Copy-Item backend/.env.example backend/.env
 ```
+
+Set a non-empty `SECRET_KEY` in `backend/.env` before starting the API. The local SQLite default is `app.db`; on Render, set `DATABASE_URL` to a file on the mounted persistent disk.
 
 Start the API:
 
@@ -41,7 +45,7 @@ cd backend
 python app.py
 ```
 
-The API runs at `http://127.0.0.1:5000`. The SQLite database is created at `backend/revoco.db` when the app starts. Check that the API is up at `http://127.0.0.1:5000/api/health`.
+The API runs at `http://127.0.0.1:5000`. Check that it is up at `http://127.0.0.1:5000/api/health`.
 
 ### Frontend
 
@@ -50,6 +54,7 @@ In a second terminal, from the repository root:
 ```powershell
 cd frontend
 npm install
+Copy-Item .env.example .env
 npm run dev
 ```
 
@@ -61,7 +66,10 @@ Set environment variables in the backend process when enabling these integration
 
 | Variable | Purpose |
 | --- | --- |
-| `REVOCO_SECRET_KEY` | Secret used to sign access tokens. Set a long, random value outside local development. |
+| `SECRET_KEY` | Required secret used to sign access tokens. Set a long, random value. |
+| `DATABASE_URL` | SQLAlchemy URL; on Render use `sqlite:////var/data/revoco.db` with a disk mounted at `/var/data`. |
+| `FRONTEND_URL` | Allowed CORS origin; set this to the deployed Vercel origin. |
+| `REVOCO_PUBLIC_APP_URL` | Public frontend origin used by generated lot QR codes. |
 | `REVOCO_TOKEN_TTL_SECONDS` | Access-token lifetime in seconds; defaults to 12 hours. |
 | `GOOGLE_API_KEY` | Enables AI waste-volume estimation. |
 | `WASTE_ESTIMATION_MODEL` | Overrides the default Gemini estimation model. |
@@ -72,12 +80,17 @@ Set environment variables in the backend process when enabling these integration
 
 Without the optional provider credentials, the corresponding integrations return an explicit unavailable or configuration error; the app does not fabricate classifications or estimates.
 
+## Deployment
+
+- Render: use the repository root as the Docker build context and `backend/Dockerfile` as the Dockerfile path. Mount a persistent disk at `/var/data` and set `DATABASE_URL=sqlite:////var/data/revoco.db`, `SECRET_KEY`, and `FRONTEND_URL`.
+- Vercel: set the project root to `frontend` and `VITE_API_URL` to the Render service origin without an `/api` suffix. `vercel.json` provides the React Router fallback.
+
 ## Tests
 
-Run the backend route tests from the `backend/` directory:
+Run the backend test suite from the `backend/` directory:
 
 ```powershell
-python -m pytest -q test_market_api.py
+python -m pytest -q
 ```
 
 Run the frontend production build from `frontend/`:

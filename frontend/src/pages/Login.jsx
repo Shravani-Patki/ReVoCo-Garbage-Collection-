@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { User, Building, Truck, ShieldAlert, LogIn, UserPlus } from 'lucide-react';
@@ -79,8 +79,8 @@ const Login = () => {
             return;
         }
         const url = isRegister
-            ? 'http://127.0.0.1:5000/api/auth/register'
-            : 'http://127.0.0.1:5000/api/auth/login';
+            ? '/api/auth/register'
+            : '/api/auth/login';
         const toastId = toast.loading(isRegister ? 'Creating account...' : 'Verifying credentials...');
 
         try {
