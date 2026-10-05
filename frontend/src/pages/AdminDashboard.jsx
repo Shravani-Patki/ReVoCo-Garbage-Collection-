@@ -146,10 +146,10 @@ const AdminDashboard = () => {
     ];
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--color-bg)' }}>
+        <div className="dashboard-layout" style={{ display: 'flex', minHeight: '100vh', background: 'var(--color-bg)' }}>
             {/* Sidebar */}
-            <div style={{ width: '280px', background: 'var(--color-surface)', borderRight: '1px solid var(--color-border)', height: 'calc(100vh - 80px)', position: 'sticky', top: '80px', padding: '32px 24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ marginBottom: 24 }}>
+            <div className="dashboard-sidebar" style={{ width: '280px', background: 'var(--color-surface)', borderRight: '1px solid var(--color-border)', height: 'calc(100vh - 80px)', position: 'sticky', top: '80px', padding: '32px 24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div className="dashboard-nav-group" style={{ marginBottom: 24 }}>
                     <div style={{ fontSize: '0.8rem', color: 'var(--color-text-light)', textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 600, marginBottom: 16 }}>{t("Root Navigation")}</div>
                     {navItems.map(item => (
                         <button
@@ -173,7 +173,7 @@ const AdminDashboard = () => {
             </div>
 
             {/* Main Content */}
-            <motion.div style={{ flex: 1, padding: '48px', maxWidth: 1200 }} initial="initial" animate="in" exit="out" variants={pageVariants}>
+            <motion.div className="dashboard-main" style={{ flex: 1, padding: '48px', maxWidth: 1200 }} initial="initial" animate="in" exit="out" variants={pageVariants}>
 
                 {/* Top Bar */}
                 <div className="flex-between" style={{ marginBottom: 40, background: 'var(--color-surface)', padding: '16px 32px', borderRadius: 99, boxShadow: 'var(--shadow-sm)' }}>

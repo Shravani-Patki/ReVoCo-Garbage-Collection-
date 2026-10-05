@@ -193,3 +193,103 @@ class EWasteDrive(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     municipality = db.relationship('User', backref=db.backref('e_waste_drives', lazy=True))
 
+
+class PickupLotLink(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    pickup_id = db.Column(db.Integer, db.ForeignKey('market_pickup.id'), nullable=False, unique=True)
+    lot_id = db.Column(db.Integer, db.ForeignKey('waste_lot.id'), nullable=False, unique=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    pickup = db.relationship('MarketPickup', backref=db.backref('lot_link', uselist=False))
+    lot = db.relationship('WasteLot', backref=db.backref('pickup_link', uselist=False))
+
+
+class PickupLocation(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    pickup_id = db.Column(db.Integer, db.ForeignKey('market_pickup.id'), nullable=False, unique=True)
+    latitude = db.Column(db.Float, nullable=False)
+    longitude = db.Column(db.Float, nullable=False)
+
+    pickup = db.relationship('MarketPickup', backref=db.backref('location', uselist=False))
+
+
+class PickupMaterialItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    pickup_id = db.Column(db.Integer, db.ForeignKey('market_pickup.id'), nullable=False, index=True)
+    lot_id = db.Column(db.Integer, db.ForeignKey('waste_lot.id'), nullable=True, unique=True)
+    material = db.Column(db.String(50), nullable=False)
+    estimated_weight_kg = db.Column(db.Float, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    pickup = db.relationship('MarketPickup', backref=db.backref('material_items', lazy=True, order_by='PickupMaterialItem.id'))
+    lot = db.relationship('WasteLot', backref=db.backref('pickup_material_item', uselist=False))
+
+
+class LotTraceEvent(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    lot_id = db.Column(db.Integer, db.ForeignKey('waste_lot.id'), nullable=False, index=True)
+    actor_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    status = db.Column(db.String(50), nullable=False)
+    details = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    lot = db.relationship('WasteLot', backref=db.backref('trace_events', lazy=True, order_by='LotTraceEvent.created_at'))
+    actor = db.relationship('User')
+
+
+class MarketTransaction(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    lot_id = db.Column(db.Integer, db.ForeignKey('waste_lot.id'), nullable=True, index=True)
+    trade_id = db.Column(db.Integer, db.ForeignKey('lot_trade.id'), nullable=True, unique=True)
+    pickup_id = db.Column(db.Integer, db.ForeignKey('market_pickup.id'), nullable=True, unique=True)
+    payer_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    payee_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    payment_method = db.Column(db.String(30), nullable=False)
+    payment_reference = db.Column(db.String(120), nullable=True)
+    status = db.Column(db.String(30), nullable=False, default='recorded')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    lot = db.relationship('WasteLot')
+    trade = db.relationship('LotTrade')
+    pickup = db.relationship('MarketPickup')
+    payer = db.relationship('User', foreign_keys=[payer_id])
+    payee = db.relationship('User', foreign_keys=[payee_id])
+
+
+class MaterialRateHistory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    original_rate_id = db.Column(db.Integer, nullable=False, index=True)
+    municipality_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    city = db.Column(db.String(100), nullable=False)
+    state = db.Column(db.String(100), nullable=False)
+    material = db.Column(db.String(50), nullable=False)
+    price_per_kg = db.Column(db.Float, nullable=False)
+    source = db.Column(db.String(255), nullable=False)
+    effective_date = db.Column(db.Date, nullable=False)
+    recorded_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    municipality = db.relationship('User')
+
+
+class MaterialRecord(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    material = db.Column(db.String(80), nullable=False, unique=True)
+    active = db.Column(db.Boolean, nullable=False, default=True)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    creator = db.relationship('User')
+
+
+class RecyclerRequirement(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    company_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    material = db.Column(db.String(50), nullable=False)
+    quantity_kg = db.Column(db.Float, nullable=False)
+    details = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(20), nullable=False, default='open')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    company = db.relationship('User', backref=db.backref('recycler_requirements', lazy=True))
+

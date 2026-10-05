@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { AnimatePresence } from 'framer-motion';
 import { ToastContainer } from 'react-toastify';
@@ -18,6 +18,7 @@ import UserDashboard from './pages/UserDashboard';
 import MunicipalityDashboard from './pages/MunicipalityDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import ProfilePage from './pages/ProfilePage';
+import LotTrackingPage from './pages/LotTrackingPage';
 import { MarketRoleDashboard } from './pages/WasteMarketplace';
 import { t, useI18n } from "./i18n";
 
@@ -90,6 +91,7 @@ function AnimatedRoutes() {
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/track/:token" element={<LotTrackingPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/user/*" element={user && user.role === 'citizen' ? <UserDashboard /> : <Login />} />
         <Route path="/society/*" element={user && user.role === 'society' ? <MarketRoleDashboard role="company" /> : <Login />} />

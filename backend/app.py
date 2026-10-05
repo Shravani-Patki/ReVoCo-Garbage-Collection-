@@ -10,7 +10,7 @@ from routes_society import society_bp
 from routes_admin import admin_bp
 from routes_classify import classify_bp
 from routes_routing import routing_bp
-from routes_market import market_bp
+from routes_market import ensure_market_history, market_bp
 from routes_i18n import i18n_bp
 
 
@@ -42,6 +42,7 @@ def create_app(test_config=None):
 
     with app.app_context():
         db.create_all()
+        ensure_market_history()
 
     return app
 

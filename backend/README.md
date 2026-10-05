@@ -20,6 +20,14 @@ Create a workspace-root `.env` from `.env.example` and set `BHASHINI_USER_ID`, `
 
 From the workspace root, run `python scripts/translate_locales.py` to translate `frontend/src/locales/en.json` and write the eight regional catalogs. Runtime fallback uses the same pipeline through `/api/i18n/translate` and a browser-local cache. Without Bhashini credentials, English remains as fallback text and the runtime endpoint returns HTTP 503.
 
+## Lot traceability and receipts
+
+Each `WasteLot` keeps its existing database ID. The API derives a display ID (`RV-YYYY-NNNNN`) from that row and signs a stable public tracking URL for its QR code. Set `REVOCO_PUBLIC_APP_URL` to the deployed frontend origin when generating QR links; it defaults to `http://localhost:5173` for local development.
+
+`db.create_all()` adds the trace-event, pickup-item/location, transaction, material-catalog, and historical-rate tables without altering existing tables. Startup backfills existing lots, current municipality rates, and accepted pickups idempotently. Backfilled weights remain estimated unless a collector verification was actually recorded.
+
+The lot lifecycle distinguishes pickup acceptance, collector-confirmed weight, company request/acceptance, recorded payment, recycler receipt, recycling in progress, and recycling completed. Only the verified company associated with a paid lot can advance the recycler lifecycle, and completion requires an explicit final action. Payment records are manual ledger entries; `digital` identifies a reported method and is not proof of payment-provider settlement. Customer receipts require the citizen to confirm the collector's recorded payment.
+
 ## Frontend API
 
 The Vite frontend calls `http://127.0.0.1:5000`. Start the backend before testing login, registration, classification, or marketplace features. Focused route integration tests run with `python -m pytest -q test_market_api.py`.

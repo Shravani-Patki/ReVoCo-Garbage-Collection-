@@ -414,10 +414,10 @@ const MunicipalityDashboard = () => {
     };
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--color-bg)' }}>
+        <div className="dashboard-layout" style={{ display: 'flex', minHeight: '100vh', background: 'var(--color-bg)' }}>
 
             {/* ── Sidebar ─────────────────────────────────────────────────── */}
-            <div style={{ width: 260, background: 'var(--color-surface)', borderRight: '1px solid var(--color-border)', height: 'calc(100vh - 80px)', position: 'sticky', top: '80px', padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: 4, overflowY: 'auto', flexShrink: 0 }}>
+            <div className="dashboard-sidebar" style={{ width: 260, background: 'var(--color-surface)', borderRight: '1px solid var(--color-border)', height: 'calc(100vh - 80px)', position: 'sticky', top: '80px', padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: 4, overflowY: 'auto', flexShrink: 0 }}>
                 {/* City header */}
                 <div style={{ padding: '12px 16px', marginBottom: 8, background: 'rgba(16,185,129,0.06)', borderRadius: 14, border: '1px solid rgba(16,185,129,0.15)' }}>
                     <div style={{ fontSize: '0.75rem', color: 'var(--color-text-light)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5 }}>{t("Municipality")}</div>
@@ -447,7 +447,7 @@ const MunicipalityDashboard = () => {
             </div>
 
             {/* ── Main panel ──────────────────────────────────────────────── */}
-            <div style={{ flex: 1, padding: '40px 48px', overflowY: 'auto', maxHeight: 'calc(100vh - 80px)' }}>
+            <div className="dashboard-main" style={{ flex: 1, padding: '40px 48px', overflowY: 'auto', maxHeight: 'calc(100vh - 80px)' }}>
                 <AnimatePresence mode="wait">
                     {renderContent()}
                 </AnimatePresence>

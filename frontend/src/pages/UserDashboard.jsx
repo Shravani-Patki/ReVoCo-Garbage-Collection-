@@ -269,13 +269,14 @@ const UserDashboard = () => {
         { id: 'estimate', label: 'Weight Estimate', icon: Activity },
         { id: 'rates', label: 'Waste Rates', icon: Coins },
         { id: 'drives', label: 'E-waste Drives', icon: Megaphone },
+        { id: 'khata', label: 'Customer Kamai Khata', icon: Coins },
         { id: 'report', label: 'Report', icon: MapIcon },
     ];
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--color-bg)' }}>
+        <div className="dashboard-layout" style={{ display: 'flex', minHeight: '100vh', background: 'var(--color-bg)' }}>
             {/* ── Sidebar ── */}
-            <div style={{ width: '280px', background: 'var(--color-surface)', borderRight: '1px solid var(--color-border)', height: 'calc(100vh - 80px)', position: 'sticky', top: '80px', padding: '32px 24px', display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto' }}>
+            <div className="dashboard-sidebar" style={{ width: '280px', background: 'var(--color-surface)', borderRight: '1px solid var(--color-border)', height: 'calc(100vh - 80px)', position: 'sticky', top: '80px', padding: '32px 24px', display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto' }}>
                 <div style={{ fontSize: '0.8rem', color: 'var(--color-text-light)', textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 600, marginBottom: 16 }}>{t("Citizen Portal")}</div>
                 {navItems.map(item => (
                     <button key={item.id} onClick={() => setActiveTab(item.id)}
@@ -294,7 +295,7 @@ const UserDashboard = () => {
             </div>
 
             {/* ── Main Content ── */}
-            <motion.div style={{ flex: 1, padding: '48px', overflowY: 'auto' }} initial="initial" animate="in" exit="out" variants={pageVariants}>
+            <motion.div className="dashboard-main" style={{ flex: 1, padding: '48px', overflowY: 'auto' }} initial="initial" animate="in" exit="out" variants={pageVariants}>
                 {/* Top bar */}
                 <div className="flex-between" style={{ marginBottom: 40, background: 'var(--color-surface)', padding: '16px 32px', borderRadius: 99, boxShadow: 'var(--shadow-sm)' }}>
                     <div style={{ color: 'var(--color-text-light)', fontSize: '0.95rem' }}>{t("Citizen Portal /")}{' '}<strong style={{ color: 'var(--color-text-dark)' }}>{navItems.find(n => n.id === activeTab)?.label}</strong>
@@ -600,7 +601,7 @@ const UserDashboard = () => {
                 )}
 
                 {/* ── REPORT TAB ── */}
-                {['pickup', 'estimate', 'rates', 'drives'].includes(activeTab) && (
+                {['pickup', 'estimate', 'rates', 'drives', 'khata'].includes(activeTab) && (
                     <UserWastePanel user={user} activeTab={activeTab} />
                 )}
 
